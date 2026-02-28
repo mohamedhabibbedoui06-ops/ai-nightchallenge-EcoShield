@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoShield AI — Smart City Guardian</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #030b14;
+    --panel: #071420;
+    --border: #0d2438;
+    --green: #00f5a0;
+    --cyan: #00d4ff;
+    --red: #ff2d55;
+    --orange: #ff9500;
+    --text: #b8d4e8;
+    --text-dim: #4a6d85;
+    --glow-green: 0 0 20px rgba(0,245,160,0.4);
+    --glow-red: 0 0 20px rgba(255,45,85,0.5);
+    --glow-cyan: 0 0 20px rgba(0,212,255,0.3);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 20% 20%, rgba(0,245,160,0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(0,212,255,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+    animation: breathe 8s ease-in-out infinite alternate;
+  }
+
+  @keyframes breathe {
+    from { opacity: 0.5; }
+    to { opacity: 1; }
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 24px 40px;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 0 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon {
+    width: 48px;
+    height: 48px;
+    border: 2px solid var(--green);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--glow-green);
+    animation: pulse-border 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 10px rgba(0,245,160,0.3); }
+    50% { box-shadow: 0 0 25px rgba(0,245,160,0.7); }
+  }
+
+  .logo-icon svg { width: 28px; height: 28px; }
+
+  .logo-text h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text h1 span { color: var(--green); }
+  
+  .logo-text p {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .city-badge {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--cyan);
+  }
+
+  .status-live {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--green);
+  }
+
+  .dot-live {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: blink 1.2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ALERT BANNER */
+  #alert-banner {
+    display: none;
+    background: linear-gradient(90deg, rgba(255,45,85,0.15), rgba(255,45,85,0.05));
+    border: 1px solid var(--red);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin-bottom: 24px;
+    box-shadow: var(--glow-red);
+    animation: alert-pulse 0.5s ease-in-out;
+    align-items: center;
+    gap: 16px;
+  }
+
+  #alert-banner.show { display: flex; }
+
+  @keyframes alert-pulse {
+    0% { transform: scale(0.98); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .alert-icon {
+    font-size: 24px;
+    animation: shake 0.5s ease-in-out;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  .alert-content h3 {
+    color: var(--red);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .alert-content p {
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    margin-top: 3px;
+  }
+
+  .alert-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: #fff;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* METRICS ROW */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .metric-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 16px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent, var(--cyan)), transparent);
+  }
+
+  .metric-card.green { --accent: var(--green); }
+  .metric-card.red { --accent: var(--red); border-color: rgba(255,45,85,0.3); }
+  .metric-card.orange { --accent: var(--orange); }
+
+  .metric-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+
+  .metric-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .metric-value.green { color: var(--green); text-shadow: 0 0 20px rgba(0,245,160,0.5); }
+  .metric-value.red { color: var(--red); text-shadow: 0 0 20px rgba(255,45,85,0.5); }
+  .metric-value.orange { color: var(--orange); }
+  .metric-value.cyan { color: var(--cyan); }
+
+  .metric-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* MAIN GRID */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .panel-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-title .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+  }
+
+  /* CHART */
+  .chart-container {
+    position: relative;
+    height: 280px;
+  }
+
+  /* CONTROL BUTTONS */
+  .controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+
+  .btn-attack {
+    background: rgba(255,45,85,0.15);
+    color: var(--red);
+    border: 1px solid rgba(255,45,85,0.4);
+  }
+
+  .btn-attack:hover {
+    background: rgba(255,45,85,0.25);
+    box-shadow: 0 0 15px rgba(255,45,85,0.3);
+  }
+
+  .btn-optimize {
+    background: rgba(0,245,160,0.1);
+    color: var(--green);
+    border: 1px solid rgba(0,245,160,0.3);
+  }
+
+  .btn-optimize:hover {
+    background: rgba(0,245,160,0.2);
+    box-shadow: 0 0 15px rgba(0,245,160,0.3);
+  }
+
+  .btn-reset {
+    background: rgba(0,212,255,0.1);
+    color: var(--cyan);
+    border: 1px solid rgba(0,212,255,0.3);
+  }
+
+  .btn-reset:hover {
+    background: rgba(0,212,255,0.2);
+  }
+
+  /* EVENTS LOG */
+  .events-log {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .event-item {
+    background: rgba(255,255,255,0.02);
+    border-left: 3px solid var(--border);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 12px;
+    animation: slide-in 0.3s ease;
+  }
+
+  @keyframes slide-in {
+    from { transform: translateX(-10px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  .event-item.attack { border-left-color: var(--red); background: rgba(255,45,85,0.05); }
+  .event-item.blocked { border-left-color: var(--green); background: rgba(0,245,160,0.05); }
+  .event-item.optimize { border-left-color: var(--cyan); background: rgba(0,212,255,0.04); }
+
+  .event-type {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 3px;
+  }
+
+  .event-item.attack .event-type { color: var(--red); }
+  .event-item.blocked .event-type { color: var(--green); }
+  .event-item.optimize .event-type { color: var(--cyan); }
+
+  .event-desc { font-size: 12px; color: var(--text); }
+  .event-time {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* BOTTOM GRID */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+
+  /* SENSOR MAP */
+  .sensor-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+
+  .sensor-node {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid transparent;
+    position: relative;
+  }
+
+  .sensor-node.ok {
+    background: rgba(0,245,160,0.1);
+    border-color: rgba(0,245,160,0.2);
+    color: var(--green);
+  }
+
+  .sensor-node.compromised {
+    background: rgba(255,45,85,0.2);
+    border-color: rgba(255,45,85,0.5);
+    color: var(--red);
+    animation: node-flash 0.6s ease-in-out infinite alternate;
+  }
+
+  @keyframes node-flash {
+    from { box-shadow: 0 0 0 rgba(255,45,85,0); }
+    to { box-shadow: 0 0 12px rgba(255,45,85,0.6); }
+  }
+
+  .sensor-node.warning {
+    background: rgba(255,149,0,0.1);
+    border-color: rgba(255,149,0,0.3);
+    color: var(--orange);
+  }
+
+  /* ANOMALY SCORE */
+  .score-bar-wrap {
+    margin-bottom: 12px;
+  }
+
+  .score-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 5px;
+  }
+
+  .score-bar-bg {
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    height: 8px;
+    overflow: hidden;
+  }
+
+  .score-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.8s ease, background 0.3s;
+  }
+
+  /* MODEL INFO */
+  .model-box {
+    background: rgba(0,212,255,0.04);
+    border: 1px solid rgba(0,212,255,0.15);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .model-name {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--cyan);
+    margin-bottom: 4px;
+  }
+
+  .model-desc {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .model-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .tag {
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 4px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--cyan);
+    padding: 2px 8px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ENERGY GAUGE */
+  .gauge-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+  }
+
+  .gauge-svg { overflow: visible; }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-brand {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .footer-brand span { color: var(--green); }
+
+  .arch-pills {
+    display: flex;
+    gap: 8px;
+  }
+
+  .arch-pill {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Scanning line animation */
+  .scan-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.4;
+    animation: scan 3s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes scan {
+    0% { top: 0; opacity: 0; }
+    5% { opacity: 0.4; }
+    95% { opacity: 0.4; }
+    100% { top: 100%; opacity: 0; }
+  }
+
+  .chart-container { position: relative; }
+
+  /* Responsive */
+  @media (max-width: 1100px) {
+    .metrics-row { grid-template-columns: repeat(3, 1fr); }
+    .main-grid { grid-template-columns: 1fr; }
+    .bottom-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 28 28" fill="none">
+          <path d="M14 2L4 8v12l10 6 10-6V8L14 2z" stroke="#00f5a0" stroke-width="1.5" fill="none"/>
+          <path d="M14 7l-5 3v6l5 3 5-3V10l-5-3z" fill="rgba(0,245,160,0.2)" stroke="#00f5a0" stroke-width="1"/>
+          <circle cx="14" cy="14" r="2" fill="#00f5a0"/>
+          <path d="M14 2v5M14 21v5M4 8l5 3M19 17l5 3M4 20l5-3M19 11l5-3" stroke="rgba(0,245,160,0.4)" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <h1>Eco<span>Shield</span> AI</h1>
+        <p>Smart City Guardian System</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="city-badge">📍 SFAX — TUNISIE</div>
+      <div class="status-live">
+        <div class="dot-live"></div>
+        SYSTÈME ACTIF
+      </div>
+    </div>
+  </header>
+
+  <!-- ALERT BANNER -->
+  <div id="alert-banner">
+    <div class="alert-icon">🚨</div>
+    <div class="alert-content">
+      <h3 id="alert-title">ATTAQUE FDI DÉTECTÉE & NEUTRALISÉE</h3>
+      <p id="alert-desc">Injection de données falsifiées détectée sur capteurs S-07, S-12, S-18 — Isolation et correction en cours</p>
+    </div>
+    <div class="alert-badge">BLOQUÉE</div>
+  </div>
+
+  <!-- METRICS ROW -->
+  <div class="metrics-row">
+    <div class="metric-card green">
+      <div class="metric-label">Gain Énergétique</div>
+      <div class="metric-value green" id="energy-gain">0%</div>
+      <div class="metric-sub">Économies réalisées</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Capteurs Actifs</div>
+      <div class="metric-value cyan" id="active-sensors">47/50</div>
+      <div class="metric-sub">Réseau IoT</div>
+    </div>
+    <div class="metric-card red" id="attack-card">
+      <div class="metric-label">Attaques Bloquées</div>
+      <div class="metric-value red" id="attacks-blocked">0</div>
+      <div class="metric-sub">Injections FDI</div>
+    </div>
+    <div class="metric-card orange">
+      <div class="metric-label">Score Anomalie</div>
+      <div class="metric-value orange" id="anomaly-score-val">0.12</div>
+      <div class="metric-sub">Seuil: &gt;0.65</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">CO₂ Évité</div>
+      <div class="metric-value green" id="co2-saved">0 t</div>
+      <div class="metric-sub">Ce mois</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+    <!-- CHART PANEL -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="dot"></div>
+          Consommation Réelle vs Optimisée — Éclairage Public & Eau
+        </div>
+        <div class="controls">
+          <button class="btn btn-attack" onclick="launchAttack()">⚡ Simuler Attaque FDI</button>
+          <button class="btn btn-optimize" onclick="toggleOptimize()">🌿 Optimisation IA</button>
+          <button class="btn btn-reset" onclick="resetSim()">↺ Reset</button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <div class="scan-line"></div>
+        <canvas id="mainChart"></canvas>
+      </div>
+    </div>
+
+    <!-- EVENTS LOG -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="dot"></div>
+          Journal d'Événements
+        </div>
+      </div>
+      <div class="events-log" id="events-log">
+        <div class="event-item optimize">
+          <div class="event-type">Système</div>
+          <div class="event-desc">EcoShield AI initialisé — Surveillance active sur 50 capteurs</div>
+          <div class="event-time">00:00:00 — SFAX GRID</div>
+        </div>
+        <div class="event-item optimize">
+          <div class="event-type">Optimisation</div>
+          <div class="event-desc">Algorithme d'allocation dynamique actif — Mode éco engagé</div>
+          <div class="event-time">00:00:01 — IA GUARDIAN</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM GRID -->
+  <div class="bottom-grid">
+
+    <!-- SENSOR MAP -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="dot"></div>Réseau Capteurs IoT</div>
+      </div>
+      <div class="sensor-grid" id="sensor-grid"></div>
+      <div style="margin-top:14px; display:flex; gap:16px; font-size:11px;">
+        <span style="color:var(--green); font-family:Space Mono,monospace;">◆ OK</span>
+        <span style="color:var(--orange); font-family:Space Mono,monospace;">◆ Alerte</span>
+        <span style="color:var(--red); font-family:Space Mono,monospace;">◆ Compromis</span>
+      </div>
+    </div>
+
+    <!-- ANOMALY SCORES -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="dot"></div>Scores d'Anomalie</div>
+      </div>
+      <div id="anomaly-bars">
+        <!-- generated -->
+      </div>
+      <div style="margin-top:16px; font-family:Space Mono,monospace; font-size:10px; color:var(--text-dim); line-height:1.8;">
+        Modèle: <span style="color:var(--cyan)">Isolation Forest + Z-Score</span><br>
+        Seuil FDI: <span style="color:var(--orange)">σ > 3.2</span><br>
+        Latence détection: <span style="color:var(--green)">< 250ms</span>
+      </div>
+    </div>
+
+    <!-- AI MODEL INFO -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><div class="dot"></div>Architecture IA</div>
+      </div>
+      <div class="model-box">
+        <div class="model-name">🛡️ Détection FDI</div>
+        <div class="model-desc">Isolation Forest multi-capteurs avec analyse temporelle Z-Score. Détection en temps réel des injections de fausses données.</div>
+        <div class="model-tags">
+          <span class="tag">ISOLATION FOREST</span>
+          <span class="tag">Z-SCORE</span>
+          <span class="tag">LSTM</span>
+        </div>
+      </div>
+      <div class="model-box" style="border-color:rgba(0,245,160,0.15); background:rgba(0,245,160,0.03);">
+        <div class="model-name" style="color:var(--green)">⚡ Optimisation Énergie</div>
+        <div class="model-desc">RL-based resource allocation. Réduit 30% éclairage public et 25% eau via adaptation temps réel.</div>
+        <div class="model-tags">
+          <span class="tag" style="border-color:rgba(0,245,160,0.3); color:var(--green); background:rgba(0,245,160,0.08)">REINFORCEMENT RL</span>
+          <span class="tag" style="border-color:rgba(0,245,160,0.3); color:var(--green); background:rgba(0,245,160,0.08)">PROPHET</span>
+        </div>
+      </div>
+      <!-- GAUGE -->
+      <div class="gauge-wrap">
+        <svg class="gauge-svg" width="160" height="90" viewBox="0 0 160 90">
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#00f5a0"/>
+              <stop offset="60%" style="stop-color:#ff9500"/>
+              <stop offset="100%" style="stop-color:#ff2d55"/>
+            </linearGradient>
+          </defs>
+          <!-- Track -->
+          <path d="M 15 80 A 65 65 0 0 1 145 80" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10" stroke-linecap="round"/>
+          <!-- Fill -->
+          <path id="gauge-fill" d="M 15 80 A 65 65 0 0 1 145 80" fill="none" stroke="url(#gaugeGrad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="204" stroke-dashoffset="100"/>
+          <!-- Needle -->
+          <g id="gauge-needle" transform="rotate(-45, 80, 80)">
+            <line x1="80" y1="80" x2="80" y2="25" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="80" cy="80" r="5" fill="#fff"/>
+          </g>
+          <text x="80" y="68" text-anchor="middle" font-family="Space Mono" font-size="18" fill="white" font-weight="700" id="gauge-pct">0%</text>
+          <text x="80" y="80" text-anchor="middle" font-family="Space Mono" font-size="8" fill="rgba(255,255,255,0.5)">GAIN ÉCO</text>
+          <text x="15" y="92" font-family="Space Mono" font-size="8" fill="#00f5a0">0%</text>
+          <text x="138" y="92" font-family="Space Mono" font-size="8" fill="#ff2d55">40%</text>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-brand">
+      <span>EcoShield AI</span> — Prototype Smart City · Sfax, Tunisie · 2025
+    </div>
+    <div class="arch-pills">
+      <div class="arch-pill">Python FastAPI</div>
+      <div class="arch-pill">MQTT Broker</div>
+      <div class="arch-pill">Isolation Forest</div>
+      <div class="arch-pill">RL Optimization</div>
+      <div class="arch-pill">Edge Computing</div>
+    </div>
+  </div>
+
+</div><!-- end wrapper -->
+
+<script>
+// ─────────────────────────────────────────
+// DATA & STATE
+// ─────────────────────────────────────────
+const NUM_POINTS = 48; // 24h by 30min
+let state = {
+  optimizing: true,
+  underAttack: false,
+  attacksBlocked: 0,
+  energySaved: 0,
+  tick: 0,
+  sensors: Array.from({length:25}, (_,i) => ({id:i+1, status:'ok'})),
+};
+
+// Generate baseline consumption (kW) over 24h
+function generateBaseline(t) {
+  // Realistic city curve: low at night, peaks at 8am and 7pm
+  const hour = (t / 2) % 24;
+  let base = 120;
+  base += 60 * Math.sin((hour - 14) * Math.PI / 12);
+  if(hour >= 7 && hour <= 10) base += 40;
+  if(hour >= 18 && hour <= 22) base += 50;
+  base += (Math.random() - 0.5) * 15;
+  return Math.max(70, base);
+}
+
+function generateOptimized(raw, optimizing) {
+  if(!optimizing) return raw;
+  // 20-32% reduction with some variance
+  const reduction = 0.22 + Math.random() * 0.10;
+  return raw * (1 - reduction) + (Math.random()-0.5)*5;
+}
+
+// Init chart data
+let labels = [];
+let rawData = [];
+let optData = [];
+let attackData = [];
+
+for(let i = 0; i < NUM_POINTS; i++) {
+  const h = Math.floor(i/2).toString().padStart(2,'0');
+  const m = (i%2===0)?'00':'30';
+  labels.push(`${h}:${m}`);
+  const raw = generateBaseline(i);
+  rawData.push(raw);
+  optData.push(generateOptimized(raw, true));
+  attackData.push(null);
+}
+
+// ─────────────────────────────────────────
+// CHART SETUP
+// ─────────────────────────────────────────
+const ctx = document.getElementById('mainChart').getContext('2d');
+
+const gradientRaw = ctx.createLinearGradient(0,0,0,280);
+gradientRaw.addColorStop(0, 'rgba(0,212,255,0.3)');
+gradientRaw.addColorStop(1, 'rgba(0,212,255,0)');
+
+const gradientOpt = ctx.createLinearGradient(0,0,0,280);
+gradientOpt.addColorStop(0, 'rgba(0,245,160,0.3)');
+gradientOpt.addColorStop(1, 'rgba(0,245,160,0)');
+
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [
+      {
+        label: 'Consommation Brute (kW)',
+        data: rawData,
+        borderColor: '#00d4ff',
+        backgroundColor: gradientRaw,
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: 'Consommation Optimisée IA (kW)',
+        data: optData,
+        borderColor: '#00f5a0',
+        backgroundColor: gradientOpt,
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: '⚠ Données FDI Injectées',
+        data: attackData,
+        borderColor: '#ff2d55',
+        backgroundColor: 'rgba(255,45,85,0.15)',
+        borderWidth: 2.5,
+        borderDash: [6,3],
+        pointRadius: 5,
+        pointBackgroundColor: '#ff2d55',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 1.5,
+        tension: 0.2,
+        fill: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: {
+        labels: {
+          color: '#b8d4e8',
+          font: { family: 'Space Mono', size: 10 },
+          boxWidth: 12,
+          padding: 20
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(7,20,32,0.95)',
+        borderColor: '#0d2438',
+        borderWidth: 1,
+        titleColor: '#fff',
+        bodyColor: '#b8d4e8',
+        titleFont: { family: 'Space Mono', size: 11 },
+        bodyFont: { family: 'Space Mono', size: 10 },
+        callbacks: {
+          label(ctx) {
+            return `${ctx.dataset.label}: ${ctx.raw?.toFixed(1)} kW`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: {
+          color: '#4a6d85',
+          font: { family: 'Space Mono', size: 9 },
+          maxTicksLimit: 12
+        },
+        grid: { color: 'rgba(13,36,56,0.8)' },
+        border: { color: '#0d2438' }
+      },
+      y: {
+        ticks: {
+          color: '#4a6d85',
+          font: { family: 'Space Mono', size: 9 },
+          callback: v => `${v.toFixed(0)} kW`
+        },
+        grid: { color: 'rgba(13,36,56,0.8)' },
+        border: { color: '#0d2438' }
+      }
+    }
+  }
+});
+
+// ─────────────────────────────────────────
+// SENSOR GRID
+// ─────────────────────────────────────────
+function renderSensors() {
+  const grid = document.getElementById('sensor-grid');
+  grid.innerHTML = '';
+  state.sensors.forEach(s => {
+    const el = document.createElement('div');
+    el.className = `sensor-node ${s.status}`;
+    el.textContent = `S${s.id.toString().padStart(2,'0')}`;
+    el.title = `Capteur ${s.id}: ${s.status.toUpperCase()}`;
+    grid.appendChild(el);
+  });
+}
+
+renderSensors();
+
+// ─────────────────────────────────────────
+// ANOMALY BARS
+// ─────────────────────────────────────────
+const anomalySystems = [
+  { name: 'Éclairage — Zone Nord', score: 0.12, color: 'var(--green)' },
+  { name: 'Éclairage — Zone Sud', score: 0.08, color: 'var(--green)' },
+  { name: 'Eau — Réseau Principal', score: 0.21, color: 'var(--green)' },
+  { name: 'Eau — Château d\'Eau', score: 0.15, color: 'var(--green)' },
+  { name: 'Capteurs Périmètre', score: 0.09, color: 'var(--green)' },
+];
+
+function renderAnomalyBars(scores=anomalySystems) {
+  const container = document.getElementById('anomaly-bars');
+  container.innerHTML = '';
+  scores.forEach(s => {
+    const pct = Math.min(100, s.score * 100);
+    let color;
+    if(s.score < 0.35) color = '#00f5a0';
+    else if(s.score < 0.65) color = '#ff9500';
+    else color = '#ff2d55';
+
+    container.innerHTML += `
+      <div class="score-bar-wrap">
+        <div class="score-label-row">
+          <span>${s.name}</span>
+          <span style="color:${color}">${s.score.toFixed(2)}</span>
+        </div>
+        <div class="score-bar-bg">
+          <div class="score-bar-fill" style="width:${pct}%; background:${color}"></div>
+        </div>
+      </div>`;
+  });
+}
+
+renderAnomalyBars();
+
+// ─────────────────────────────────────────
+// GAUGE UPDATE
+// ─────────────────────────────────────────
+function updateGauge(pct) {
+  // 204 = half circle dasharray
+  const offset = 204 - (pct/40) * 204; // max 40%
+  document.getElementById('gauge-fill').style.strokeDashoffset = Math.max(0, offset);
+  document.getElementById('gauge-pct').textContent = pct.toFixed(1) + '%';
+  // Rotate needle: -90 to +90 degrees for 0-40%
+  const angle = -90 + (pct/40)*180;
+  document.getElementById('gauge-needle').setAttribute('transform', `rotate(${angle}, 80, 80)`);
+}
+
+// ─────────────────────────────────────────
+// LOGGING
+// ─────────────────────────────────────────
+function addEvent(type, title, desc) {
+  const log = document.getElementById('events-log');
+  const now = new Date();
+  const time = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+  const div = document.createElement('div');
+  div.className = `event-item ${type}`;
+  div.innerHTML = `<div class="event-type">${title}</div><div class="event-desc">${desc}</div><div class="event-time">${time} — ECOSHIELD</div>`;
+  log.insertBefore(div, log.firstChild);
+  // Keep max 20
+  while(log.children.length > 20) log.removeChild(log.lastChild);
+}
+
+// ─────────────────────────────────────────
+// ATTACK SIMULATION
+// ─────────────────────────────────────────
+let attackTimeout = null;
+
+function launchAttack() {
+  if(state.underAttack) return;
+  state.underAttack = true;
+
+  // Pick random contiguous range to inject
+  const start = Math.floor(Math.random() * 20) + 5;
+  const len = Math.floor(Math.random() * 6) + 4;
+
+  // Inject false data: dramatically different from real
+  const fakeMult = Math.random() > 0.5 ? 2.2 : 0.15;
+  for(let i = start; i < start+len && i < NUM_POINTS; i++) {
+    attackData[i] = rawData[i] * fakeMult + (Math.random()-0.5)*40;
+  }
+
+  // Compromise random sensors
+  const toCompromise = [6, 11, 17, 22].map(i => state.sensors[i]);
+  toCompromise.forEach(s => s.status = 'compromised');
+  renderSensors();
+
+  // High anomaly scores
+  const highScores = anomalySystems.map((s,i) => ({
+    ...s, 
+    score: i < 3 ? 0.72 + Math.random()*0.25 : 0.15 + Math.random()*0.2
+  }));
+  renderAnomalyBars(highScores);
+
+  document.getElementById('anomaly-score-val').textContent = '0.87';
+  document.getElementById('anomaly-score-val').style.color = 'var(--red)';
+  document.getElementById('anomaly-score-val').style.textShadow = '0 0 20px rgba(255,45,85,0.7)';
+
+  // Show alert
+  const attackTypes = [
+    ['Injection FDI sur Éclairage Zone Nord', 'Données de consommation falsifiées ×2.2 — Tentative de déclencher black-out ciblé'],
+    ['Masquage de Fuite Réseau Eau', 'Données injections ×0.15 — Tentative de masquer fuite massive sous-déclarée'],
+    ['Attaque Coordonnée Multi-Capteurs', 'Compromission capteurs S07, S12, S18, S23 — Patterns FDI détectés']
+  ];
+  const [atTitle, atDesc] = attackTypes[Math.floor(Math.random()*attackTypes.length)];
+
+  document.getElementById('alert-title').textContent = `🚨 ATTAQUE FDI DÉTECTÉE & NEUTRALISÉE`;
+  document.getElementById('alert-desc').textContent = atDesc;
+  document.getElementById('alert-banner').classList.add('show');
+
+  addEvent('attack', '🔴 Attaque Détectée', atTitle);
+
+  chart.data.datasets[2].data = [...attackData];
+  chart.update();
+
+  // AI neutralization after 1.5s
+  attackTimeout = setTimeout(() => {
+    blockAttack(start, len);
+  }, 1800);
+}
+
+function blockAttack(start, len) {
+  state.attacksBlocked++;
+  document.getElementById('attacks-blocked').textContent = state.attacksBlocked;
+
+  // Clear injected data
+  for(let i = start; i < start+len && i < NUM_POINTS; i++) {
+    attackData[i] = null;
+  }
+
+  // Restore sensors
+  state.sensors.forEach((s,i) => {
+    if([6,11,17,22].includes(i)) {
+      s.status = 'warning';
+      setTimeout(() => { s.status = 'ok'; renderSensors(); }, 3000);
+    }
+  });
+  renderSensors();
+
+  // Restore anomaly scores
+  const restoredScores = anomalySystems.map(s => ({...s, score: s.score + Math.random()*0.05}));
+  renderAnomalyBars(restoredScores);
+
+  document.getElementById('anomaly-score-val').textContent = '0.18';
+  document.getElementById('anomaly-score-val').style.color = 'var(--orange)';
+  document.getElementById('anomaly-score-val').style.textShadow = '';
+
+  addEvent('blocked', '✅ Attaque Bloquée', `FDI neutralisée — Données corrompues isolées. Capteurs remis en ligne.`);
+
+  // Hide alert after 4s
+  setTimeout(() => {
+    document.getElementById('alert-banner').classList.remove('show');
+    state.underAttack = false;
+
+    chart.data.datasets[2].data = [...attackData];
+    chart.update();
+
+    // Normalize anomaly
+    renderAnomalyBars();
+    document.getElementById('anomaly-score-val').textContent = '0.12';
+    document.getElementById('anomaly-score-val').style.color = '';
+  }, 4000);
+}
+
+// ─────────────────────────────────────────
+// OPTIMIZE TOGGLE
+// ─────────────────────────────────────────
+function toggleOptimize() {
+  state.optimizing = !state.optimizing;
+  // Recalculate opt data
+  for(let i = 0; i < NUM_POINTS; i++) {
+    optData[i] = generateOptimized(rawData[i], state.optimizing);
+  }
+  chart.data.datasets[1].data = [...optData];
+  chart.update();
+  addEvent('optimize', state.optimizing ? '✅ Optimisation ON' : '⚠ Optimisation OFF',
+    state.optimizing ? 'Allocation dynamique réactivée — Réduction 28% en cours' : 'Mode optimisation suspendu — Consommation brute active');
+}
+
+// ─────────────────────────────────────────
+// RESET
+// ─────────────────────────────────────────
+function resetSim() {
+  if(attackTimeout) clearTimeout(attackTimeout);
+  state.underAttack = false;
+  state.attacksBlocked = 0;
+  state.optimizing = true;
+  state.energySaved = 0;
+  state.sensors.forEach(s => s.status='ok');
+
+  for(let i=0;i<NUM_POINTS;i++) {
+    const raw = generateBaseline(i);
+    rawData[i] = raw;
+    optData[i] = generateOptimized(raw, true);
+    attackData[i] = null;
+  }
+
+  chart.data.datasets[0].data = [...rawData];
+  chart.data.datasets[1].data = [...optData];
+  chart.data.datasets[2].data = [...attackData];
+  chart.update();
+
+  document.getElementById('alert-banner').classList.remove('show');
+  document.getElementById('attacks-blocked').textContent = '0';
+  document.getElementById('anomaly-score-val').textContent = '0.12';
+  document.getElementById('anomaly-score-val').style.color = '';
+  document.getElementById('energy-gain').textContent = '0%';
+  document.getElementById('co2-saved').textContent = '0 t';
+  updateGauge(0);
+  renderSensors();
+  renderAnomalyBars();
+  addEvent('optimize', '↺ Reset', 'Simulation réinitialisée — EcoShield AI en surveillance');
+}
+
+// ─────────────────────────────────────────
+// LIVE TICKER
+// ─────────────────────────────────────────
+let tickCount = 0;
+let energyPct = 0;
+
+setInterval(() => {
+  if(state.underAttack) return;
+  tickCount++;
+
+  // Slowly increase energy savings
+  if(state.optimizing && energyPct < 29.8) {
+    energyPct = Math.min(29.8, energyPct + 0.15 + Math.random()*0.3);
+  } else if(!state.optimizing) {
+    energyPct = Math.max(0, energyPct - 0.5);
+  }
+
+  document.getElementById('energy-gain').textContent = energyPct.toFixed(1) + '%';
+  document.getElementById('co2-saved').textContent = (energyPct * 4.2).toFixed(1) + ' t';
+  updateGauge(energyPct);
+
+  // Occasionally add small random events
+  if(tickCount % 8 === 0) {
+    const normal = [
+      'Ajustement éclairage — Avenue Habib Bourguiba: -18% intensité',
+      'Débit eau optimisé — Quartier Sakiet: économie 340L/h',
+      'Prédiction pic 18h00 — Pré-ajustement distribution engagé',
+      'Capteur S15 — Données normalisées, consommation stable',
+    ];
+    addEvent('optimize', 'Optimisation', normal[Math.floor(Math.random()*normal.length)]);
+  }
+
+  // Slight data shimmer
+  const idx = tickCount % NUM_POINTS;
+  const raw = generateBaseline(idx);
+  rawData[idx] = raw;
+  if(state.optimizing) optData[idx] = generateOptimized(raw, true);
+  chart.data.datasets[0].data = [...rawData];
+  chart.data.datasets[1].data = [...optData];
+  chart.update('none');
+
+  // Update anomaly score slightly
+  if(!state.underAttack) {
+    const sc = (0.08 + Math.random()*0.1).toFixed(2);
+    document.getElementById('anomaly-score-val').textContent = sc;
+  }
+
+}, 1500);
+
+// Init
+updateGauge(0);
+setTimeout(() => {
+  energyPct = 0;
+}, 100);
+</script>
+</body>
+</html>
